@@ -73,7 +73,7 @@ cmd({
 🎧 *Title:* ${meta.title}
 📀 *Channel:* ${meta.channel}
 ⏱ *Duration:* ${meta.duration}
-📅 *Released:* ${released}
+📅 *Released:* ${meta.released}
 🔗 *URL:* ${meta.url}
 
 > © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;

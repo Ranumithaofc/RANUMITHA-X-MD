@@ -9,15 +9,15 @@
     "restart": "pm2 restart RANUMITHA-X-MD"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "7.0.0-rc.7",
+    "@whiskeysockets/baileys": "^6.7.21",
     "@adiwajshing/keyed-db": "latest",
     "@dark-yasiya/yt-dl.js": "1.0.5",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@vitalets/google-translate-api": "^9.2.1",
     "@dark-yasiya/scrap": "1.0.1",
-    "pino": "^7.0.5",
+    "pino": "^9.5.0",
     "pm2": "^6.0.8",
-    "util": "^0.12.4",
+    "util": "^0.12.5",
     "jimp": "^1.6.0",
     "express": "latest",
     "moment-timezone": "^0.6.0",

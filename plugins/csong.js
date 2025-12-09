@@ -44,8 +44,6 @@ cmd({
       return reply("❌ Invalid channel JID! It should end with @newsletter");
     }
 
-    if (!songName) return reply("⚠️ Please provide a song name.");
-
     // Fetch song details
     const apiUrl = `https://api.nekolabs.my.id/downloader/youtube/play/v1?q=${encodeURIComponent(songName)}`;
     const res = await fetch(apiUrl);
@@ -57,6 +55,9 @@ cmd({
 
     const meta = data.result.metadata;
     const dlUrl = data.result.downloadUrl;
+
+    // Released date eka set karanna
+    const released = meta.releaseDate || meta.uploadDate || meta.published || "Unknown";
 
     // Try fetching thumbnail
     let buffer;
@@ -72,6 +73,7 @@ cmd({
 🎧 *Title:* ${meta.title}
 📀 *Channel:* ${meta.channel}
 ⏱ *Duration:* ${meta.duration}
+📅 *Released:* ${released}
 🔗 *URL:* ${meta.url}
 
 > © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;

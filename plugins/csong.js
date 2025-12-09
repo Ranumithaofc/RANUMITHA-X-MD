@@ -1,122 +1,90 @@
 const { cmd } = require("../command");
 const fetch = require("node-fetch");
-const fs = require("fs");
-const path = require("path");
-const ffmpeg = require("fluent-ffmpeg");
-
-// Fake vCard
-const fakevCard = {
-    key: {
-        fromMe: false,
-        participant: "0@s.whatsapp.net",
-        remoteJid: "status@broadcast"
-    },
-    message: {
-        contactMessage: {
-            displayName: "© Mr Hiruka",
-            vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:Meta
-ORG:META AI;
-TEL;type=CELL;type=VOICE;waid=94762095304:+94762095304
-END:VCARD`
-        }
-    }
-};
 
 cmd({
   pattern: "csong",
-  alias: ["chsong", "channelplay"],
-  react: "🍁",
-  desc: "Send a YouTube song to a WhatsApp Channel (voice + details)",
-  category: "channel",
-  use: ".csong <song name>/<channel JID>",
+  alias: ["cs", "channelsong"],
+  react: "🎧",
+  desc: "Search YouTube Channel Songs & Download",
+  category: "download",
+  use: ".csong <channel/song name>",
   filename: __filename,
-}, async (conn, mek, m, { from, reply, q }) => {
+},
+
+async (conn, mek, m, { from, q, reply }) => {
   try {
-    if (!q || !q.includes("/")) {
-      return reply("⚠️ Use format:\n.csong <song name>/<channel JID>\n\nExample:\n.csong Shape of You/1203630xxxxx@newsletter");
-    }
+    if (!q) return reply("⚠️ Please enter channel or song name.");
 
-    const [songName, channelJid] = q.split("/").map(x => x.trim());
-
-    if (!channelJid.endsWith("@newsletter")) {
-      return reply("❌ Invalid channel JID! It should end with @newsletter");
-    }
-
-    if (!songName) return reply("⚠️ Please provide a song name.");
-
-    // Fetch song details
-    const apiUrl = `https://api.nekolabs.my.id/downloader/youtube/play/v1?q=${encodeURIComponent(songName)}`;
+    // API call
+    const apiUrl = `https://api.nekolabs.my.id/search/youtube?q=${encodeURIComponent(q)}`;
     const res = await fetch(apiUrl);
     const data = await res.json();
 
-    if (!data?.success || !data?.result?.downloadUrl) {
-      return reply("❌ Song not found or API error.");
+    if (!data?.success || !data?.result?.length) {
+      return reply("❌ No songs found.");
     }
 
-    const meta = data.result.metadata;
-    const dlUrl = data.result.downloadUrl;
+    const results = data.result.slice(0, 10); 
 
-    // Try fetching thumbnail
-    let buffer;
-    try {
-      const thumbRes = await fetch(meta.cover);
-      buffer = Buffer.from(await thumbRes.arrayBuffer());
-    } catch {
-      buffer = null;
-    }
+    let listText = `🎧 *YouTube Songs Found*\n\n🔍 *Search:* ${q}\n\n👇 *Reply with number to download*\n\n`;
 
-    const caption = `🎶 *RANUMITHA-X-MD SONG SENDER* 🎶
-
-🎧 *Title:* ${meta.title}
-📀 *Channel:* ${meta.channel}
-⏱ *Duration:* ${meta.duration}
-🔗 *URL:* ${meta.url}
-
-> © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;
-
-    // Send details + image to channel
-    await conn.sendMessage(channelJid, {
-      image: buffer,
-      caption: caption
-    }, { quoted: fakevCard });
-
-    // Convert to voice (.opus)
-    const tempPath = path.join(__dirname, `../temp/${Date.now()}.mp3`);
-    const voicePath = path.join(__dirname, `../temp/${Date.now()}.opus`);
-
-    const audioRes = await fetch(dlUrl);
-    const audioBuffer = Buffer.from(await audioRes.arrayBuffer());
-    fs.writeFileSync(tempPath, audioBuffer);
-
-    await new Promise((resolve, reject) => {
-      ffmpeg(tempPath)
-        .audioCodec("libopus")
-        .format("opus")
-        .audioBitrate("64k")
-        .save(voicePath)
-        .on("end", resolve)
-        .on("error", reject);
+    results.forEach((song, i) => {
+      listText += `${i + 1}. *${song.title}*\n   ⏱ ${song.duration}\n   📺 ${song.author}\n\n`;
     });
 
-    const voiceBuffer = fs.readFileSync(voicePath);
+    const sent = await conn.sendMessage(from, { text: listText });
+    const messageID = sent.key.id;
 
-    // Send as voice note to the channel
-    await conn.sendMessage(channelJid, {
-      audio: voiceBuffer,
-      mimetype: "audio/ogg; codecs=opus",
-      ptt: true
-    }, { quoted: fakevCard });
+    // Listener
+    conn.ev.on("messages.upsert", async (msgUp) => {
+      try {
+        const msg = msgUp.messages[0];
+        if (!msg.message) return;
 
-    // Clean temp
-    fs.unlinkSync(tempPath);
-    fs.unlinkSync(voicePath);
+        const txt = msg.message.conversation || msg.message.extendedTextMessage?.text;
 
-    reply(`*✅ Song sent successfully*\n\n*🎧 Song Title* :- ${meta.title}\n*🔖 Channel jid* :- ${channelJid}`);
+        const isReply = msg?.message?.extendedTextMessage?.contextInfo?.stanzaId === messageID;
+        if (!isReply) return;
+
+        const index = Number(txt.trim()) - 1;
+        if (isNaN(index) || !results[index]) {
+          return reply("❌ Invalid number.");
+        }
+
+        const selected = results[index];
+
+        await conn.sendMessage(from, {
+          react: { text: "⬇️", key: msg.key },
+        });
+
+        // Download Audio
+        const dlApi = `https://api.nekolabs.my.id/downloader/youtube/play/v1?q=${encodeURIComponent(selected.url)}`;
+        const dlRes = await fetch(dlApi);
+        const dlData = await dlRes.json();
+
+        if (!dlData?.success) return reply("❌ Failed to download audio.");
+
+        await conn.sendMessage(
+          from,
+          {
+            audio: { url: dlData.result.downloadUrl },
+            mimetype: "audio/mpeg",
+            fileName: `${selected.title}.mp3`,
+          },
+          { quoted: mek }
+        );
+
+        await conn.sendMessage(from, {
+          react: { text: "✔️", key: msg.key },
+        });
+
+      } catch (e) {
+        console.error(e);
+      }
+    });
 
   } catch (err) {
-    console.error("csong error:", err);
-    reply("⚠️ Error while sending song to channel.");
+    console.error(err);
+    return reply("⚠️ Error while searching songs.");
   }
 });

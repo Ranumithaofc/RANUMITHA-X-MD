@@ -31,25 +31,19 @@ cmd({
     use: '.ginfo',
     filename: __filename
 },
-async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply, isBotAdmins, isAdmins, isDev }) => {
+async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply }) => {
     try {
 
-        // === FIXED JSON LOADING WITH SAFE FALLBACKS ===
+        // Load reply messages safely
         const res = await fetchJson(
             'https://raw.githubusercontent.com/KNIGHT-MD-V1/DARK-KNIGHT-XMD/refs/heads/main/MSG/mreply.json'
         );
 
         const msr = res?.replyMsg || {};
+        msr.only_gp = msr.only_gp || "❗ This command can be used only in groups!";
 
-        // Fallback messages (Prevent Undefined Crash)
-        msr.only_gp  = msr.only_gp  || "❗ This command can be used only in groups!";
-        msr.you_adm  = msr.you_adm  || "❗ You must be an admin to use this!";
-        msr.give_adm = msr.give_adm || "❗ I need admin rights to continue!";
-
-        // === GROUP VALIDATIONS ===
+        // === ONLY CHECK GROUP ===
         if (!isGroup) return reply(msr.only_gp);
-        if (!isAdmins && !isDev) return reply(msr.you_adm);
-        if (!isBotAdmins) return reply(msr.give_adm);
 
         // === GROUP ICON FALLBACK ===
         const ppUrls = [
@@ -86,7 +80,6 @@ async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply, isBot
 *Group Admins:*\n${listAdmin}\n
 > © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;
 
-        // === SEND MESSAGE ===
         await conn.sendMessage(from, {
             image: { url: ppUrl },
             caption: gdata,

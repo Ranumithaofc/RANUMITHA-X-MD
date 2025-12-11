@@ -33,12 +33,25 @@ cmd({
 },
 async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply, isBotAdmins, isAdmins, isDev }) => {
     try {
-        const msr = (await fetchJson('https://raw.githubusercontent.com/KNIGHT-MD-V1/DARK-KNIGHT-XMD/refs/heads/main/MSG/mreply.json')).replyMsg
 
-        if (!isGroup) return reply(msr.only_gp)
-        if (!isAdmins && !isDev) return reply(msr.you_adm)
-        if (!isBotAdmins) return reply(msr.give_adm)
+        // === FIXED JSON LOADING WITH SAFE FALLBACKS ===
+        const res = await fetchJson(
+            'https://raw.githubusercontent.com/KNIGHT-MD-V1/DARK-KNIGHT-XMD/refs/heads/main/MSG/mreply.json'
+        );
 
+        const msr = res?.replyMsg || {};
+
+        // Fallback messages (Prevent Undefined Crash)
+        msr.only_gp  = msr.only_gp  || "❗ This command can be used only in groups!";
+        msr.you_adm  = msr.you_adm  || "❗ You must be an admin to use this!";
+        msr.give_adm = msr.give_adm || "❗ I need admin rights to continue!";
+
+        // === GROUP VALIDATIONS ===
+        if (!isGroup) return reply(msr.only_gp);
+        if (!isAdmins && !isDev) return reply(msr.you_adm);
+        if (!isBotAdmins) return reply(msr.give_adm);
+
+        // === GROUP ICON FALLBACK ===
         const ppUrls = [
             'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png',
             'https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png',
@@ -52,13 +65,14 @@ async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply, isBot
             ppUrl = ppUrls[Math.floor(Math.random() * ppUrls.length)];
         }
 
+        // === GROUP METADATA ===
         const metadata = await conn.groupMetadata(from);
         const groupAdmins = participants.filter(p => p.admin);
+
         const listAdmin = groupAdmins.length
             ? groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n')
             : "No admins found";
 
-        // Handle missing owner safely
         const owner = metadata.owner
             ? `@${metadata.owner.split('@')[0]}`
             : "Not available";
@@ -72,6 +86,7 @@ async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply, isBot
 *Group Admins:*\n${listAdmin}\n
 > © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;
 
+        // === SEND MESSAGE ===
         await conn.sendMessage(from, {
             image: { url: ppUrl },
             caption: gdata,

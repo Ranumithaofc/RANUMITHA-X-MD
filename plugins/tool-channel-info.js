@@ -1,6 +1,5 @@
 const config = require('../config');
 const { cmd } = require('../command');
-const { fetchJson } = require('../lib/functions');
 
 // Fake vCard
 const fakevCard = {
@@ -28,17 +27,14 @@ cmd({
     react: "📡",
     desc: "Get WhatsApp Channel Information.",
     category: "general",
-    use: ".chinfo <channel_jid | link>",
+    use: ".chinfo <jid | link>",
     filename: __filename
 },
 async (conn, mek, m, { from, args, reply }) => {
     try {
 
-        // Check user input
         if (!args[0])
-            return reply(
-                "📡 *Please enter a Channel JID or Channel Link!*\n\nExample:\n.chinfo 120363299999999999@newsletter\n.chinfo https://whatsapp.com/channel/ABC123"
-            );
+            return reply("📡 *Enter a Channel Link or JID!*\n\nExample:\n.chinfo https://whatsapp.com/channel/ABCDeF");
 
         // Convert link → JID
         let jid = args[0];
@@ -46,28 +42,24 @@ async (conn, mek, m, { from, args, reply }) => {
             jid = jid.split("channel/")[1];
         }
 
-        // Fetch channel metadata
-        const data = await conn.newsletterMetadata(jid);
+        // FIXED: use V2 API
+        const data = await conn.newsletterMetadataV2(jid);
 
         if (!data)
-            return reply("❌ *Invalid channel!* Please check link or JID again.");
+            return reply("❌ *Invalid Channel! Check JID/Link again.*");
 
-        // Channel profile picture fallback
-        const pp = data?.picture
-            ? data.picture
-            : "https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png";
+        const pp = data.picture || 
+        "https://i.ibb.co/KhYC4FY/1221bc0bdd2354b42b293317ff2adbcf-icon.png";
 
-        // Channel Info Message
         const txt = `*📡 WhatsApp Channel Information*\n
-🧿 *Channel Name:* ${data.name || "N/A"}
-🔗 *Channel Link:* https://whatsapp.com/channel/${jid}
-🆔 *Channel JID:* ${jid}
+🧿 *Name:* ${data.name || "N/A"}
+🔗 *Link:* https://whatsapp.com/channel/${jid}
+🆔 *JID:* ${jid}
 👤 *Owner:* @${(data.owner || "").split("@")[0]}
-👥 *Followers:* ${data.subscribers?.toLocaleString() || "0"}
+👥 *Followers:* ${data.subscribers ? data.subscribers.toLocaleString() : "0"}
 📄 *Description:* ${data.description || "No description"}\n
-> © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;
+> © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗`;
 
-        // Send channel info
         await conn.sendMessage(from, {
             image: { url: pp },
             caption: txt,

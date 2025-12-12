@@ -6,7 +6,7 @@ function convertToBool(text, fault = "true") {
   return text === fault ? true : false;
 }
 module.exports = {
-SESSION_ID: process.env.SESSION_ID || "ranu&kEZ3BZyZ#Fk-OufqwRT3ffLFaMZBZphlewCSwe4Fm1WI8f48MldM",
+SESSION_ID: process.env.SESSION_ID || "ranu&cdxnTaDK#9VaB_mvY8SmfoMcpEtL1RPhJediaPjqk4EoflQo9W8M",
 // add your Session Id (මුලට "ranu&")
 AUTO_RECORDING: process.env.AUTO_RECORDING || "false",
 // make it true for auto recoding 

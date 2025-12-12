@@ -72,12 +72,12 @@ async (conn, mek, m, { from, quoted, isGroup, sender, participants, reply }) => 
             : "Not available";
 
         const gdata = `*「 Group Information 」*\n
-*Group Name:* ${metadata.subject}
-*Group ID:* ${metadata.id}
-*Participant Count:* ${metadata.size}
-*Group Creator:* ${owner}
-*Group Description:* ${metadata.desc?.toString() || 'No description'}\n
-*Group Admins:*\n${listAdmin}\n
+🔥 \`Group Name:\` ${metadata.subject}
+🎀 \`Group ID:\` ${metadata.id}
+👥 \`Participant Count:\` ${metadata.size}
+👾 \`Group Creator:\` ${owner}
+📃 \`Group Description:\` ${metadata.desc?.toString() || 'No description'}\n
+🥷 \`Group Admins:\`\n${listAdmin}\n
 > © Powered by 𝗥𝗔𝗡𝗨𝗠𝗜𝗧𝗛𝗔-𝗫-𝗠𝗗 🌛`;
 
         await conn.sendMessage(from, {

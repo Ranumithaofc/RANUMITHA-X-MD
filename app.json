@@ -5,11 +5,15 @@
   "keywords": ["bot"],
   "success_url": "/",
 
+    "stack": "container",
   "env": {
     "SESSION_ID": {
       "description": "Put the session-id here.",
-      "required": true
-    },  
+      "required": true,
+      "value": "" 
+    }
+
+},
 
      "buildpacks": [
         {
@@ -18,3 +22,4 @@
      ],
   "stack": "heroku-24"
 }
+  
